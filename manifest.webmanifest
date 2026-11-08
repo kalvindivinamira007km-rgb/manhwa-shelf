@@ -1,11 +1,11 @@
-{
+﻿{
   "name": "My Manhwa Shelf",
   "short_name": "Manhwa Shelf",
   "description": "A cute manhwa reading tracker that saves on your device.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#fdf2f5",
+  "background_color": "#ffffff",
   "theme_color": "#f6bfd0",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
