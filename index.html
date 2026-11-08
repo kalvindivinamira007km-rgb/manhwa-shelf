@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Manhwa Shelf</title>
+<meta name="description" content="A cute manhwa reading tracker that saves on your device.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Manhwa Shelf">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fdf2f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1318" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&family=Quicksand:wght@400;600;700&family=Fredoka:wght@400;500;600&family=Lora:wght@400;600;700&family=Playfair+Display:wght@500;700&family=Patrick+Hand&family=Gowun+Dodum&family=Space+Mono:wght@400;700&family=Comfortaa:wght@400;700&family=Baloo+2:wght@400;600;800&family=Mali:wght@400;600;700&family=Gaegu:wght@400;700&family=Jua&family=Sniglet:wght@400;800&family=Gamja+Flower&family=Chewy&display=swap">
+<style>
+/* Layout: one reading column — header, status tabs, toolbar, then a ledger of rows (title left, chapter right). */
+:root {
+  --bg: #fdf2f5;
+  --surface: #ffffff;
+  --surface-2: #fbe6ec;
+  --ink: #3b2430;
+  --muted: #8d6a79;
+  --line: #f1d5de;
+  --pink: #f6bfd0;          /* baby pink */
+  --pink-ink: #c4567c;      /* readable pink for text/buttons */
+  --on-pink: #3b1726;
+  --sage: #7fa889;
+  --sage-bg: #e4f1e7;
+  --mauve: #a08a94;
+  --mauve-bg: #efe7ea;
+  --shadow: 0 10px 30px rgba(196, 86, 124, .14);
+  --font: "Nunito", ui-rounded, system-ui, sans-serif;
+  --mono: "Space Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-mode="light"]) {
+    --bg: #1d1318; --surface: #281a21; --surface-2: #33212a; --ink: #fbe9ef; --muted: #c7a0b0;
+    --line: #3e2a33; --pink: #f8c6d6; --pink-ink: #f7b4ca; --on-pink: #3b1726;
+    --sage: #a6cdb0; --sage-bg: #24342a; --mauve: #bba5ae; --mauve-bg: #33282d;
+    --shadow: 0 10px 30px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]:not([data-mode="light"]), :root[data-mode="dark"] {
+  --bg: #1d1318; --surface: #281a21; --surface-2: #33212a; --ink: #fbe9ef; --muted: #c7a0b0;
+  --line: #3e2a33; --pink: #f8c6d6; --pink-ink: #f7b4ca; --on-pink: #3b1726;
+  --sage: #a6cdb0; --sage-bg: #24342a; --mauve: #bba5ae; --mauve-bg: #33282d;
+  --shadow: 0 10px 30px rgba(0,0,0,.4); color-scheme: dark;
+}
+:root[data-mode="light"] { color-scheme: light; }
+
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; -webkit-tap-highlight-color: transparent;
+  background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+  transition: background .2s, color .2s;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--pink-ink); outline-offset: 2px; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { margin: 0; font-size: clamp(1.6rem, 5vw, 2.2rem); font-weight: 800; letter-spacing: -.01em; text-wrap: balance; line-height: 1.1; }
+h1 span { color: var(--pink-ink); }
+header > div:first-child { min-width: 0; }
+.name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#shelfName { cursor: text; overflow-wrap: anywhere; }
+.name-input { font-size: 1.4rem; font-weight: 800; padding: 4px 10px; }
+.name-edit { border: 0; background: transparent; color: var(--muted); width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+.name-edit:hover { background: var(--surface-2); color: var(--pink-ink); }
+.sub { margin: 4px 0 0; color: var(--muted); font-size: .9rem; }
+.head-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: var(--pink); }
+.btn.primary { background: var(--pink); border-color: var(--pink); color: var(--on-pink); }
+.btn.primary:hover { filter: brightness(1.04); }
+.btn.icon { width: 40px; height: 40px; padding: 0; justify-content: center; }
+.btn.danger { color: #c2415f; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+svg.i { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.tabs { display: flex; gap: 6px; background: var(--surface-2); padding: 5px; border-radius: 999px; }
+.tab { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 9px 8px; font-weight: 700; color: var(--muted); display: flex; justify-content: center; align-items: center; gap: 8px; }
+.tab .count { font-family: var(--mono); font-size: .75rem; background: var(--bg); border-radius: 999px; padding: 1px 8px; font-variant-numeric: tabular-nums; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.tab[aria-selected="true"] .count { background: var(--pink); color: var(--on-pink); }
+
+.toolbar { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; }
+.field { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px 12px; width: 100%; min-width: 0; }
+.field:focus { border-color: var(--pink-ink); outline: none; }
+select.field { padding-right: 28px; }
+@media (max-width: 560px) { .toolbar { grid-template-columns: 1fr 1fr; } .toolbar .search { grid-column: 1 / -1; } }
+
+.notice { font-size: .85rem; color: var(--muted); background: var(--surface-2); border-radius: 12px; padding: 8px 12px; }
+
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.list-head { display: flex; justify-content: space-between; padding: 10px 18px; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); font-weight: 700; }
+.row { border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row-main { display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; width: 100%; }
+.row-title { flex: 1; min-width: 0; background: none; border: 0; text-align: left; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.row-title strong { font-weight: 700; overflow-wrap: anywhere; }
+.row-title small { color: var(--muted); font-size: .78rem; }
+.letter { font-family: var(--mono); font-size: .7rem; color: var(--pink-ink); padding: 6px 18px 2px; background: var(--bg); border-bottom: 1px solid var(--line); font-weight: 700; }
+.chap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.chap label { font-size: .72rem; color: var(--muted); margin-right: 2px; }
+.chap input { width: 64px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; border: 1px solid transparent; background: var(--surface-2); border-radius: 8px; padding: 5px 6px; }
+.chap input:focus { border-color: var(--pink-ink); outline: none; }
+.chap input:disabled { background: transparent; }
+.chap .plus { width: 30px; height: 30px; border-radius: 50%; border: 0; background: var(--pink); color: var(--on-pink); font-weight: 800; display: grid; place-items: center; }
+.details { padding: 0 18px 16px; display: grid; gap: 10px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: .85rem; }
+.chip { background: var(--surface-2); border-radius: 999px; padding: 2px 10px; font-size: .78rem; }
+.pill { border-radius: 999px; padding: 2px 10px; font-size: .75rem; font-weight: 700; }
+.pill.reading { background: var(--pink); color: var(--on-pink); }
+.pill.finished { background: var(--sage-bg); color: var(--sage); }
+.pill.dropped { background: var(--mauve-bg); color: var(--mauve); }
+.notes { white-space: pre-wrap; background: var(--bg); border-radius: 12px; padding: 10px 12px; font-size: .92rem; overflow-wrap: anywhere; }
+.notes.empty { color: var(--muted); font-style: italic; }
+.empty-state { padding: 40px 20px; text-align: center; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
+.empty-state strong { color: var(--ink); font-size: 1.05rem; }
+
+/* overlays */
+.overlay { position: fixed; inset: 0; background: rgba(40, 15, 25, .35); display: flex; justify-content: center; align-items: flex-start; z-index: 50;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+.sheet { background: var(--surface); border-radius: 22px; width: 100%; max-width: 520px; padding: 22px; box-shadow: var(--shadow); display: grid; gap: 14px; }
+.sheet h2 { margin: 0; font-size: 1.3rem; display: flex; justify-content: space-between; align-items: center; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+.form-grid label { display: grid; gap: 4px; font-size: .8rem; font-weight: 700; color: var(--muted); min-width: 0; }
+@media (max-width: 460px) { .form-grid { grid-template-columns: 1fr; } }
+textarea.field { min-height: 96px; resize: vertical; }
+.sheet-actions { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.sheet-actions .right { display: flex; gap: 8px; margin-left: auto; }
+
+.dd { position: relative; }
+.dd-btn { text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.dd-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-panel { position: absolute; z-index: 5; left: 0; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 6px; max-height: 240px; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.dd-panel label { flex-direction: row; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; color: var(--ink); font-weight: 600; font-size: .85rem; cursor: pointer; }
+.dd-panel label:hover { background: var(--surface-2); }
+.dd-panel input { accent-color: var(--pink-ink); }
+
+.seg { display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 999px; }
+.seg button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 8px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--pink); color: var(--on-pink); }
+.fonts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.font-opt { border: 1.5px solid var(--line); background: var(--bg); border-radius: 14px; padding: 10px 12px; text-align: left; display: grid; gap: 2px; }
+.font-opt b { font-size: 1.05rem; }
+.font-opt small { color: var(--muted); font-size: .78rem; }
+.font-opt[aria-pressed="true"] { border-color: var(--pink-ink); background: var(--surface-2); }
+.set-label { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 999px; font-size: .88rem; z-index: 60; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+.backup { display: flex; gap: 8px; flex-wrap: wrap; }
+.backup .btn { flex: 1; justify-content: center; }
+.hint { margin: 0; font-size: .82rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="name-row">
+        <h1 id="shelfName">My Manhwa <span>Shelf</span></h1>
+        <input class="field name-input" id="shelfInput" maxlength="60" aria-label="Shelf name" hidden>
+        <button class="name-edit" id="nameEditBtn" aria-label="Rename shelf" title="Rename shelf"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+      </div>
+      <p class="sub" id="summary">Loading your list…</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn icon" id="settingsBtn" aria-label="Settings" title="Settings">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="btn primary" id="addBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-status="reading" aria-selected="true">Reading <span class="count" id="c-reading">0</span></button>
+    <button class="tab" role="tab" data-status="finished" aria-selected="false">Finished <span class="count" id="c-finished">0</span></button>
+    <button class="tab" role="tab" data-status="dropped" aria-selected="false">Dropped <span class="count" id="c-dropped">0</span></button>
+  </div>
+
+  <div class="toolbar">
+    <input class="field search" id="search" type="search" placeholder="Search titles or notes" aria-label="Search">
+    <select class="field" id="genreFilter" aria-label="Filter by genre"><option value="">All genres</option></select>
+    <select class="field" id="sortSel" aria-label="Sort">
+      <option value="az">A → Z</option>
+      <option value="za">Z → A</option>
+      <option value="new">Newest started</option>
+      <option value="old">Oldest started</option>
+    </select>
+  </div>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <div class="list" id="list">
+    <div class="list-head"><span>Title</span><span>Chapter</span></div>
+    <div id="rows"><div class="empty-state"><strong>Loading your shelf…</strong></div></div>
+  </div>
+</div>
+
+<!-- Add / edit -->
+<div class="overlay" id="editOverlay" hidden>
+  <form class="sheet" id="editForm" autocomplete="off">
+    <h2><span id="editTitle">Add a manhwa</span>
+      <button type="button" class="btn icon" data-close aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></h2>
+    <div class="form-grid">
+      <label class="full">Title<input class="field" id="f-title" required maxlength="200" placeholder="e.g. The Duke's Secret Garden"></label>
+      <label>Current chapter<input class="field" id="f-chapter" type="number" min="0" step="1" value="0"></label>
+      <label>List<select class="field" id="f-status">
+        <option value="reading">Reading</option><option value="finished">Finished</option><option value="dropped">Dropped</option></select></label>
+      <label>Date started<input class="field" id="f-started" type="date"></label>
+      <label>Genres
+        <div class="dd" id="genreDD">
+          <button type="button" class="field dd-btn" id="genreBtn" aria-expanded="false"><span id="genreBtnText">Pick genres</span><svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+          <div class="dd-panel" id="genrePanel" hidden></div>
+        </div>
+      </label>
+      <label class="full">Notes<textarea class="field" id="f-notes" maxlength="5000" placeholder="Favourite characters, where you read it, thoughts on the ending…"></textarea></label>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn danger" id="deleteBtn" hidden>Delete</button>
+      <div class="right">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Settings -->
+<div class="overlay" id="setOverlay" hidden>
+  <div class="sheet">
+    <h2>Settings <button type="button" class="btn icon" data-close aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></h2>
+    <p class="set-label">Appearance</p>
+    <div class="seg" id="modeSeg">
+      <button type="button" data-mode="light" aria-pressed="false">Light</button>
+      <button type="button" data-mode="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-mode="system" aria-pressed="true">System</button>
+    </div>
+    <p class="set-label">Font</p>
+    <div class="fonts" id="fontGrid"></div>
+    <p class="set-label">Backup</p>
+    <p class="hint">Your list is saved on this device only. Save a backup now and then, so you can restore it if you delete the app or switch devices.</p>
+    <div class="backup">
+      <button type="button" class="btn" id="backupBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Save backup</button>
+      <button type="button" class="btn" id="restoreBtn"><svg class="i" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>Restore</button>
+      <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function () {
+  const GENRES = ["Action","Adventure","BL","Comedy","Drama","Fantasy","GL","Historical","Horror","Isekai","Josei","Martial Arts","Murim","Mystery","Psychological","Regression","Reincarnation","Romance","Romance Fantasy","School Life","Sci-Fi","Seinen","Shoujo","Shounen","Slice of Life","Sports","Supernatural","System","Thriller","Villainess","Other"];
+  const FONTS = [
+    { id: "Nunito", stack: '"Nunito", ui-rounded, system-ui, sans-serif', note: "Soft & rounded" },
+    { id: "Comfortaa", stack: '"Comfortaa", ui-rounded, system-ui, sans-serif', note: "Cute · round" },
+    { id: "Baloo 2", stack: '"Baloo 2", ui-rounded, system-ui, sans-serif', note: "Cute · chubby" },
+    { id: "Mali", stack: '"Mali", ui-rounded, system-ui, sans-serif', note: "Cute · playful" },
+    { id: "Sniglet", stack: '"Sniglet", ui-rounded, system-ui, sans-serif', note: "Cute · bouncy" },
+    { id: "Chewy", stack: '"Chewy", ui-rounded, system-ui, sans-serif', note: "Cute · cartoon" },
+    { id: "Jua", stack: '"Jua", ui-rounded, system-ui, sans-serif', note: "Cute · Korean" },
+    { id: "Gaegu", stack: '"Gaegu", "Patrick Hand", cursive', note: "Cute · doodle" },
+    { id: "Gamja Flower", stack: '"Gamja Flower", "Patrick Hand", cursive', note: "Cute · diary" },
+    { id: "Quicksand", stack: '"Quicksand", system-ui, sans-serif', note: "Light & airy" },
+    { id: "Fredoka", stack: '"Fredoka", system-ui, sans-serif', note: "Bubbly" },
+    { id: "Gowun Dodum", stack: '"Gowun Dodum", "Apple SD Gothic Neo", system-ui, sans-serif', note: "Korean-style" },
+    { id: "Lora", stack: '"Lora", Georgia, serif', note: "Bookish serif" },
+    { id: "Playfair Display", stack: '"Playfair Display", Georgia, serif', note: "Elegant" },
+    { id: "Patrick Hand", stack: '"Patrick Hand", "Comic Sans MS", cursive', note: "Handwritten" },
+    { id: "Space Mono", stack: '"Space Mono", ui-monospace, monospace', note: "Typewriter" },
+  ];
+  const $ = (id) => document.getElementById(id);
+  const LS_SET = "manhwa-settings", LS_DATA = "manhwa-local-items";
+  const ls = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+  };
+
+  /* ---------- settings ---------- */
+  const settings = Object.assign({ mode: "system", font: "Nunito" }, ls.get(LS_SET) || {});
+  function applySettings() {
+    const root = document.documentElement;
+    if (settings.mode === "system") root.removeAttribute("data-mode"); else root.setAttribute("data-mode", settings.mode);
+    const f = FONTS.find((x) => x.id === settings.font) || FONTS[0];
+    root.style.setProperty("--font", f.stack);
+    document.querySelectorAll("#modeSeg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === settings.mode)));
+    document.querySelectorAll(".font-opt").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.font === f.id)));
+  }
+  $("fontGrid").innerHTML = FONTS.map((f) =>
+    `<button type="button" class="font-opt" data-font="${f.id}" style="font-family:${f.stack.replace(/"/g, "&quot;")}"><b>${f.id}</b><small>${f.note} · Ch. 128</small></button>`).join("");
+  $("fontGrid").addEventListener("click", (e) => { const b = e.target.closest(".font-opt"); if (!b) return; settings.font = b.dataset.font; ls.set(LS_SET, settings); applySettings(); });
+  $("modeSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; settings.mode = b.dataset.mode; ls.set(LS_SET, settings); applySettings(); });
+  applySettings();
+
+  /* ---------- state ---------- */
+  let items = [];
+  let tab = "reading", query = "", genre = "", sort = "az";
+  let openId = null, editingId = null, canWrite = true, backend = null;
+  const savedUi = ls.get("manhwa-ui"); if (savedUi) { tab = savedUi.tab || tab; sort = savedUi.sort || sort; }
+  $("sortSel").value = sort;
+  $("genreFilter").innerHTML += GENRES.map((g) => `<option value="${g}">${g}</option>`).join("");
+
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const fmtDate = (s) => { if (!s) return "No start date"; const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), 2200); }
+
+  /* ---------- render ---------- */
+  function render() {
+    for (const s of ["reading", "finished", "dropped"]) $("c-" + s).textContent = items.filter((i) => i.status === s).length;
+    document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t.dataset.status === tab)));
+    const total = items.length;
+    $("summary").textContent = total ? `${total} series · ${items.filter((i) => i.status === "reading").length} in progress` : "Your reading list, A to Z";
+
+    const q = query.trim().toLowerCase();
+    let view = items.filter((i) => i.status === tab && (!genre || (i.genres || []).includes(genre)) &&
+      (!q || i.title.toLowerCase().includes(q) || (i.notes || "").toLowerCase().includes(q)));
+    const byTitle = (a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base", numeric: true });
+    if (sort === "az") view.sort(byTitle);
+    else if (sort === "za") view.sort((a, b) => byTitle(b, a));
+    else if (sort === "new") view.sort((a, b) => (b.started || "").localeCompare(a.started || "") || byTitle(a, b));
+    else view.sort((a, b) => (a.started || "9999").localeCompare(b.started || "9999") || byTitle(a, b));
+
+    const rows = $("rows");
+    if (!view.length) {
+      const label = { reading: "Reading", finished: "Finished", dropped: "Dropped" }[tab];
+      rows.innerHTML = total && (q || genre)
+        ? `<div class="empty-state"><strong>No matches</strong><span>Nothing in ${label} matches that search or genre.</span></div>`
+        : `<div class="empty-state"><strong>Nothing in ${label} yet</strong><span>Each series shows here with its title on the left and your chapter on the right.</span>${canWrite ? '<button class="btn primary" data-add>Add a manhwa</button>' : ""}</div>`;
+      return;
+    }
+    let lastLetter = null, html = "";
+    const showLetters = sort === "az" || sort === "za";
+    for (const i of view) {
+      if (showLetters) {
+        const L = (i.title.trim()[0] || "#").toUpperCase(); const letter = /[A-Z]/.test(L) ? L : "#";
+        if (letter !== lastLetter) { html += `<div class="letter">${letter}</div>`; lastLetter = letter; }
+      }
+      const open = openId === i.id;
+      html += `<div class="row" data-id="${esc(i.id)}">
+        <div class="row-main">
+          <button class="row-title" data-toggle aria-expanded="${open}"><strong>${esc(i.title)}</strong><small>Started ${esc(fmtDate(i.started))}${(i.genres || []).length ? " · " + esc(i.genres.slice(0, 3).join(", ")) : ""}</small></button>
+          <div class="chap"><label for="ch-${esc(i.id)}">Ch.</label>
+            <input id="ch-${esc(i.id)}" type="number" min="0" step="1" inputmode="numeric" value="${Number(i.chapter) || 0}" data-chap ${canWrite ? "" : "disabled"}></div>
+        </div>
+        ${open ? `<div class="details">
+          <div class="meta"><span class="pill ${i.status}">${i.status[0].toUpperCase() + i.status.slice(1)}</span><span>Started ${esc(fmtDate(i.started))}</span></div>
+          ${(i.genres || []).length ? `<div class="meta">${i.genres.map((g) => `<span class="chip">${esc(g)}</span>`).join("")}</div>` : ""}
+          <div class="notes ${i.notes ? "" : "empty"}">${i.notes ? esc(i.notes) : "No notes yet."}</div>
+          ${canWrite ? '<div><button class="btn" data-edit>Edit details</button></div>' : ""}
+        </div>` : ""}
+      </div>`;
+    }
+    rows.innerHTML = html;
+  }
+
+  /* ---------- storage backends ---------- */
+  const localBackend = {
+    start(onData) { onData(ls.get(LS_DATA) || []); },
+    async save(id, data) { const all = (ls.get(LS_DATA) || []).filter((x) => x.id !== id); all.push({ id, ...data }); ls.set(LS_DATA, all); items = all; render(); },
+    async remove(id) { const all = (ls.get(LS_DATA) || []).filter((x) => x.id !== id); ls.set(LS_DATA, all); items = all; render(); },
+  };
+  function dbBackend(db) {
+    const col = db.collection("manhwa");
+    return {
+      start(onData) {
+        const timer = setTimeout(() => showNotice("Can't reach your saved list yet. It will appear once the connection comes back."), 10000);
+        col.onSnapshot((snap) => {
+          if (!snap.metadata.fromCache) { clearTimeout(timer); hideNotice(); }
+          onData(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+        }, (err) => { clearTimeout(timer); showNotice("Your list stopped syncing. Reload the page to reconnect."); });
+      },
+      save: (id, data) => col.doc(id).set(data),
+      remove: (id) => col.doc(id).delete(),
+    };
+  }
+  function showNotice(t) { $("notice").textContent = t; $("notice").hidden = false; }
+  function hideNotice() { $("notice").hidden = true; }
+
+  const norm = (d) => ({
+    title: String(d.title || "Untitled").slice(0, 200),
+    chapter: Math.max(0, Math.floor(Number(d.chapter) || 0)),
+    status: ["reading", "finished", "dropped"].includes(d.status) ? d.status : "reading",
+    started: /^\d{4}-\d{2}-\d{2}$/.test(d.started || "") ? d.started : "",
+    genres: Array.isArray(d.genres) ? d.genres.filter((g) => typeof g === "string").slice(0, 20) : [],
+    notes: String(d.notes || "").slice(0, 5000),
+    updatedAt: Date.now(),
+  });
+  async function persist(id, data) {
+    try { await backend.save(id, norm(data)); return true; }
+    catch (e) {
+      if (e && e.code === "invalid_argument") { canWrite = false; render(); toast("This list is read-only for you."); }
+      else if (e && e.code === "quota_exceeded") toast("Your shelf is full. Delete a few entries to add more.");
+      else toast("Couldn't save. Check your connection and try again.");
+      return false;
+    }
+  }
+
+  /* chapter edits: coalesce per row */
+  const pending = {};
+  function queueChapter(id, value) {
+    const it = items.find((x) => x.id === id); if (!it) return;
+    it.chapter = Math.max(0, Math.floor(Number(value) || 0));
+    clearTimeout(pending[id]);
+    pending[id] = setTimeout(() => { delete pending[id]; persist(id, it); }, 600);
+  }
+
+  /* ---------- events ---------- */
+  $("tabs").addEventListener("click", (e) => { const t = e.target.closest(".tab"); if (!t) return; tab = t.dataset.status; openId = null; ls.set("manhwa-ui", { tab, sort }); render(); });
+  $("search").addEventListener("input", (e) => { query = e.target.value; render(); });
+  $("genreFilter").addEventListener("change", (e) => { genre = e.target.value; render(); });
+  $("sortSel").addEventListener("change", (e) => { sort = e.target.value; ls.set("manhwa-ui", { tab, sort }); render(); });
+  $("addBtn").addEventListener("click", () => openEditor(null));
+  $("settingsBtn").addEventListener("click", () => ($("setOverlay").hidden = false));
+
+  $("rows").addEventListener("click", (e) => {
+    if (e.target.closest("[data-add]")) return openEditor(null);
+    const row = e.target.closest(".row"); if (!row) return;
+    const id = row.dataset.id;
+    if (e.target.closest("[data-toggle]")) { openId = openId === id ? null : id; render(); }
+    else if (e.target.closest("[data-edit]")) openEditor(id);
+  });
+  $("rows").addEventListener("input", (e) => { if (e.target.matches("[data-chap]")) queueChapter(e.target.closest(".row").dataset.id, e.target.value); });
+
+  document.querySelectorAll(".overlay").forEach((o) => o.addEventListener("click", (e) => {
+    if (e.target === o || e.target.closest("[data-close]")) o.hidden = true;
+  }));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".overlay").forEach((o) => (o.hidden = true)); });
+
+  /* genre multi-select dropdown */
+  let picked = new Set();
+  $("genrePanel").innerHTML = GENRES.map((g, n) => `<label><input type="checkbox" id="g-${n}" value="${g}">${g}</label>`).join("");
+  function syncGenreBtn() { $("genreBtnText").textContent = picked.size ? [...picked].join(", ") : "Pick genres"; }
+  $("genreBtn").addEventListener("click", () => { const p = $("genrePanel"); p.hidden = !p.hidden; $("genreBtn").setAttribute("aria-expanded", String(!p.hidden)); });
+  $("genrePanel").addEventListener("change", (e) => { if (e.target.checked) picked.add(e.target.value); else picked.delete(e.target.value); syncGenreBtn(); });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#genreDD")) { $("genrePanel").hidden = true; $("genreBtn").setAttribute("aria-expanded", "false"); } });
+
+  function openEditor(id) {
+    if (!canWrite) return;
+    editingId = id;
+    const it = id ? items.find((x) => x.id === id) : null;
+    $("editTitle").textContent = it ? "Edit details" : "Add a manhwa";
+    $("f-title").value = it ? it.title : "";
+    $("f-chapter").value = it ? it.chapter : 0;
+    $("f-status").value = it ? it.status : tab;
+    $("f-started").value = it ? it.started : today();
+    $("f-notes").value = it ? it.notes || "" : "";
+    picked = new Set(it ? it.genres || [] : []);
+    $("genrePanel").querySelectorAll("input").forEach((c) => (c.checked = picked.has(c.value)));
+    syncGenreBtn(); $("genrePanel").hidden = true;
+    const del = $("deleteBtn"); del.hidden = !it; del.dataset.armed = ""; del.textContent = "Delete";
+    $("editOverlay").hidden = false;
+    setTimeout(() => $("f-title").focus(), 30);
+  }
+  $("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = $("f-title").value.trim(); if (!title) return;
+    const id = editingId || newId();
+    const data = { title, chapter: $("f-chapter").value, status: $("f-status").value, started: $("f-started").value, genres: [...picked], notes: $("f-notes").value.trim() };
+    $("saveBtn").disabled = true;
+    const ok = await persist(id, data);
+    $("saveBtn").disabled = false;
+    if (ok) { $("editOverlay").hidden = true; if (data.status !== tab) { tab = data.status; } openId = id; render(); toast(editingId ? "Saved" : "Added to " + data.status[0].toUpperCase() + data.status.slice(1)); }
+  });
+  $("deleteBtn").addEventListener("click", async () => {
+    const del = $("deleteBtn");
+    if (!del.dataset.armed) { del.dataset.armed = "1"; del.textContent = "Tap again to delete"; return; }
+    try { await backend.remove(editingId); $("editOverlay").hidden = true; openId = null; toast("Deleted"); }
+    catch (e) { toast("Couldn't delete. Try again."); }
+  });
+
+  /* ---------- editable shelf name ---------- */
+  const DEFAULT_NAME = "My Manhwa Shelf";
+  let shelfName = ls.get("manhwa-name") || DEFAULT_NAME, nameDoc = null;
+  function renderName() {
+    const h = $("shelfName"); h.textContent = "";
+    const words = shelfName.trim().split(/\s+/);
+    const last = words.length > 1 ? words.pop() : null;
+    h.append(words.join(" ") + (last ? " " : ""));
+    if (last) { const s = document.createElement("span"); s.textContent = last; h.append(s); }
+    document.title = shelfName;
+  }
+  function startRename() {
+    if (!canWrite) return;
+    const inp = $("shelfInput"); inp.value = shelfName;
+    $("shelfName").hidden = true; $("nameEditBtn").hidden = true; inp.hidden = false; inp.focus(); inp.select();
+  }
+  async function finishRename(save) {
+    const inp = $("shelfInput"); if (inp.hidden) return;
+    inp.hidden = true; $("shelfName").hidden = false; $("nameEditBtn").hidden = !canWrite;
+    const v = inp.value.trim().slice(0, 60) || DEFAULT_NAME;
+    if (!save || v === shelfName) return;
+    shelfName = v; renderName(); ls.set("manhwa-name", v);
+    if (nameDoc) { try { await nameDoc.set({ name: v }); toast("Renamed"); } catch (e) { toast("Couldn't save the new name. Try again."); } }
+    else toast("Renamed");
+  }
+  $("shelfName").addEventListener("click", startRename);
+  $("nameEditBtn").addEventListener("click", startRename);
+  $("shelfInput").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); finishRename(true); } else if (e.key === "Escape") { e.stopPropagation(); finishRename(false); } });
+  $("shelfInput").addEventListener("blur", () => finishRename(true));
+  renderName();
+
+  /* ---------- backup & restore ---------- */
+  $("backupBtn").addEventListener("click", async () => {
+    const payload = { app: "manhwa-shelf", version: 1, savedAt: new Date().toISOString(), name: shelfName, items: ls.get(LS_DATA) || [] };
+    const filename = "manhwa-shelf-backup-" + today() + ".json";
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    try {
+      const file = new File([blob], filename, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Manhwa Shelf backup" }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Backup saved");
+  });
+  $("restoreBtn").addEventListener("click", () => $("restoreFile").click());
+  $("restoreFile").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      const list = Array.isArray(data) ? data : data.items;
+      if (!Array.isArray(list)) throw new Error("bad");
+      const clean = list.filter((x) => x && x.title).map((x) => ({ id: String(x.id || newId()), ...norm(x) }));
+      // merge: restored entries replace ones with the same id, others are kept
+      const byId = new Map((ls.get(LS_DATA) || []).map((x) => [x.id, x]));
+      clean.forEach((x) => byId.set(x.id, x));
+      items = [...byId.values()]; ls.set(LS_DATA, items);
+      if (data.name && typeof data.name === "string") { shelfName = data.name.slice(0, 60); ls.set("manhwa-name", shelfName); renderName(); }
+      $("setOverlay").hidden = true; render(); toast(`Restored ${clean.length} series`);
+    } catch (err) { toast("That file isn't a Manhwa Shelf backup."); }
+  });
+
+  /* ---------- boot ---------- */
+  backend = localBackend;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  backend.start((list) => {
+    items = list.filter((x) => x && x.title).map((x) => ({ ...x, genres: x.genres || [] }));
+    render();
+  });
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
