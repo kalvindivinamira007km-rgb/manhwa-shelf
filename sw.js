@@ -1,5 +1,5 @@
 // Keeps the app opening when offline. Pages load fresh when online, cached copy otherwise.
-const CACHE = "manhwa-shelf-v1";
+const CACHE = "manhwa-shelf-v1-toread";
 const FILES = ["./", "index.html", "manifest.webmanifest", "apple-touch-icon.png", "icon-192.png", "icon-512.png"];
 
 self.addEventListener("install", (e) => {
